@@ -27,6 +27,4 @@ if __name__ == '__main__':
     src = '../../data/ori_data_5_core/reviews_' + args.filename + '_5.json.gz'
     dst = '../../data/ori_data/ratings_' + args.filename + '.csv'
     df = getDF(src)
-    df.to_csv(dst, columns = ['reviewerID', 'asin', 'overall'], index = False)
-    df = pd.read_csv(dst)
-    print(df)
+    df.to_csv(dst, columns = ['reviewerID', 'asin', 'overall'], header = False, index = False)

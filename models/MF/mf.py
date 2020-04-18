@@ -9,16 +9,16 @@ import load_data as ld
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--datapath', type = str, default = '../../data/dataset_1/Office_Products')
+    parser.add_argument('--datapath', type = str, default = '../../data/dataset_1/Movies_and_TV')
     parser.add_argument('--learning_rate', type = float, default = 0.001)
-    parser.add_argument('--reg_rate', nargs = '?', default = '[0.001, 1]')
+    parser.add_argument('--reg_rate', nargs = '?', default = '[0.001,1]')
     parser.add_argument('--epochs', type = int, default = 50)
     parser.add_argument('--batch_size', type = int, default = 128)
     
     return parser.parse_args()
 
 class MF():
-    def __init__(self, num_user, num_item, learning_rate = 0.001, reg_rate = 0.01, epochs = 50, batch_size = 128):
+    def __init__(self, num_user, num_item, learning_rate = 0.001, reg_rate = [0.001,1], epochs = 50, batch_size = 128):
         self.num_user = num_user
         self.num_item = num_item
         self.learning_rate = learning_rate
@@ -27,7 +27,7 @@ class MF():
         self.batch_size = batch_size
         print("MF init.", self.reg_rate)
     
-    def build_network(self, num_factor = 30):
+    def build_network(self, num_factor = 50):
         self.user_id = tf.placeholder(dtype = tf.int32, shape = [None], name = 'user_id')
         self.item_id = tf.placeholder(dtype = tf.int32, shape = [None], name = 'item_id')
         self.y = tf.placeholder(dtype = tf.float32, shape = [None], name = 'rating')

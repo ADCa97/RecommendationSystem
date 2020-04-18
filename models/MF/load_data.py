@@ -26,8 +26,9 @@ def load_data(path = "../../data/dataset_1/Office_Products", header = ['userid',
         train_row.append(line[1])
         train_col.append(line[2])
         train_rating.append(line[3])
+        
 
-    train_matrix = csr_matrix((train_rating, (train_row, train_row)), shape = (n_users, n_items))
+    train_matrix = csr_matrix((train_rating, (train_row, train_col)), shape = (n_users, n_items))
 
     # 载入test数据
     test_row, test_col, test_rating = [], [], []
@@ -44,4 +45,5 @@ def load_data(path = "../../data/dataset_1/Office_Products", header = ['userid',
     return train_matrix.todok(), test_matrix.todok(), n_users, n_items
 
 if __name__ == '__main__':
-    load_data()
+    a, b, c, d = load_data()
+    #print(a)

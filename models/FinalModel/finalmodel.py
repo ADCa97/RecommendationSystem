@@ -28,7 +28,7 @@ class FinalModel():
         self.batch_size = batch_size
         print("UMF init")
         pass 
-    def build_network(self, num_factor = 30):
+    def build_network(self, num_factor = 50):
         self.shareuser = tf.placeholder(dtype = tf.int32, shape = [None], name = 'shareuser')
         self.src_itemid = tf.placeholder(dtype = tf.int32, shape = [None], name = 'src_itemid')
         self.src_ratings = tf.placeholder(dtype = tf.float32, shape = [None], name = 'src_ratings')

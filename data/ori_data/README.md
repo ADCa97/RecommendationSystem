@@ -1,1 +1,1 @@
-# Amazon原始数据
+# Amazon从5-core数据提取<userid, itemid, rating>

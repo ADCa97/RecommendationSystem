@@ -1,2 +1,2 @@
-# Src: Android Apps
-# Dst: Video Games
+# Src: Books
+# Dst: Kindle Store

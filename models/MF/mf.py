@@ -14,26 +14,31 @@ def parse_args():
     parser.add_argument('--reg_rate', nargs = '?', default = '[0.001,1]')
     parser.add_argument('--epochs', type = int, default = 50)
     parser.add_argument('--batch_size', type = int, default = 128)
+    parser.add_argument('--num_factor', type = int, default = 50)
     
     return parser.parse_args()
 
 class MF():
-    def __init__(self, num_user, num_item, learning_rate = 0.001, reg_rate = [0.001,1], epochs = 50, batch_size = 128):
+    def __init__(self, num_user, num_item, learning_rate = 0.001, reg_rate = [0.001,1], epochs = 50, batch_size = 128, num_factor = 50):
         self.num_user = num_user
         self.num_item = num_item
         self.learning_rate = learning_rate
         self.reg_rate = reg_rate
         self.epochs = epochs
         self.batch_size = batch_size
-        print("MF init.", self.reg_rate)
+        self.num_factor = num_factor
+        print("MF init.")
+        print("learning_rate", self.learning_rate)
+        print("reg_rate", self.reg_rate)
+        print("num_factor", self.num_factor)
     
-    def build_network(self, num_factor = 50):
+    def build_network(self):
         self.user_id = tf.placeholder(dtype = tf.int32, shape = [None], name = 'user_id')
         self.item_id = tf.placeholder(dtype = tf.int32, shape = [None], name = 'item_id')
         self.y = tf.placeholder(dtype = tf.float32, shape = [None], name = 'rating')
         
-        self.U = tf.Variable(tf.random_normal([self.num_user, num_factor], stddev = 0.01), name = 'User')
-        self.V = tf.Variable(tf.random_normal([self.num_item, num_factor], stddev = 0.01), name = 'Item')
+        self.U = tf.Variable(tf.random_normal([self.num_user, self.num_factor], stddev = 0.01), name = 'User')
+        self.V = tf.Variable(tf.random_normal([self.num_item, self.num_factor], stddev = 0.01), name = 'Item')
 
         user_latent_factor = tf.nn.embedding_lookup(self.U, self.user_id)
         item_latent_factor = tf.nn.embedding_lookup(self.V, self.item_id)
@@ -47,6 +52,7 @@ if __name__ == '__main__':
     reg_rate = eval(args.reg_rate)
     epochs = args.epochs
     batch_size = args.batch_size
+    num_factor = args.num_factor
 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
@@ -60,7 +66,7 @@ if __name__ == '__main__':
         rating = t.data
         # 构建图
         model = None
-        model = MF(n_user, n_item, learning_rate = learning_rate, reg_rate = reg_rate, epochs = epochs, batch_size = batch_size)        
+        model = MF(n_user, n_item, learning_rate = learning_rate, reg_rate = reg_rate, epochs = epochs, batch_size = batch_size, num_factor = num_factor)        
         if model is not None:
             model.build_network()
 

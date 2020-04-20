@@ -1,11 +1,12 @@
 import argparse
 import pandas as pd
 import gzip
+import json
 
 def parse(path):
     g = gzip.open(path, 'rb')
     for l in g:
-        yield eval(l)
+        yield json.loads(l)
 
 def getDF(path):
     i = 0
@@ -25,7 +26,7 @@ def parse_args():
 # 将*.json.gz的数据存储为*.csv形式
 if __name__ == '__main__':
     args = parse_args()
-    src = '../../data/ori_data_5_core/reviews_' + args.filename + '_5.json.gz'
+    src = '../../data/ori_data_5_core/' + args.filename + '_5.json.gz'
     dst = '../../data/ori_data/ratings_' + args.filename + '.csv'
     df = getDF(src)
     df.to_csv(dst, columns = ['reviewerID', 'asin', 'overall'], header = False, index = False)

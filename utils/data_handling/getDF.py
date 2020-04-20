@@ -13,6 +13,7 @@ def getDF(path):
     for d in parse(path):
         df[i] = d
         i += 1
+    print("ratings", i)
     return pd.DataFrame.from_dict(df, orient = 'index')
 
 def parse_args():

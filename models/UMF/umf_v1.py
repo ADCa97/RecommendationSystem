@@ -28,7 +28,7 @@ class UMF():
         self.epochs = epochs
         self.batch_size = batch_size
         self.num_factor = num_factor
-        print("UMF init")
+        print("UMF_v1 init")
         print("learning_rate", self.learning_rate)
         print("reg_rate", self.reg_rate)
         print("num_factor", self.num_factor)
@@ -57,7 +57,7 @@ class UMF():
                     self.reg_rate[0] * tf.nn.l2_loss(self.U) + \
                     self.reg_rate[1] * tf.nn.l2_loss(self.src_V) + \
                     self.reg_rate[2] * tf.nn.l2_loss(self.dst_V)
-        print("UMF build_network")
+        print("UMF_v1 build_network")
 
 
 

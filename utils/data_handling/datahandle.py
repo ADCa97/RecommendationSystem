@@ -89,7 +89,7 @@ def recode_userid_itemid():
             row[0] = userdict[ori_userid]
             row[1] = itemdict[ori_itemid]
             src_write.writerow(row)
-    print('Src_save Ratings#%d' %i)
+    print('Src_save Ratings#%d Src_Users#%d Src_Items#%d' %(i, len(userdict), len(itemdict)))
 
     itemid = 0
     itemdict.clear()
@@ -109,7 +109,7 @@ def recode_userid_itemid():
                 row[1] = itemdict[ori_itemid]
                 dst_write.writerow(row)
                 i += 1
-        print('Dst_save Ratings#%d' %i)
+        print('Dst_save Ratings#%d Dst_Users#%d Dst_Items%d' %(i, len(userdict), len(itemdict)))
 
 # 按userid的大小重新排序
 def sort_data(src_save, dst_save):

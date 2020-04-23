@@ -10,6 +10,7 @@ import load_data as ld
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--datapath', type = str, default = '../../data/dataset_1/Movies_and_TV')
+    parser.add_argument('--savepath', type = str, default = './saver/Movies_and_TV/0.csv')
     parser.add_argument('--learning_rate', type = float, default = 0.001)
     parser.add_argument('--reg_rate', nargs = '?', default = '[0.001,1]')
     parser.add_argument('--epochs', type = int, default = 50)
@@ -69,6 +70,8 @@ if __name__ == '__main__':
         model = MF(n_user, n_item, learning_rate = learning_rate, reg_rate = reg_rate, epochs = epochs, batch_size = batch_size, num_factor = num_factor)        
         if model is not None:
             model.build_network()
+        cost = []
+        rmse = []
 
         optimizer = tf.train.AdamOptimizer(learning_rate = model.learning_rate).minimize(model.loss)
         init = tf.global_variables_initializer()
@@ -87,6 +90,8 @@ if __name__ == '__main__':
             item_random = list(item[idxs])
             rating_random = list(rating[idxs])
 
+
+            average_loss = []
             for i in range(total_batch):
                 batch_user = user_random[i * model.batch_size : (i + 1) * model.batch_size]
                 batch_item = item_random[i * model.batch_size : (i + 1) * model.batch_size]
@@ -94,14 +99,23 @@ if __name__ == '__main__':
                 _, loss = sess.run([optimizer, model.loss], feed_dict = {model.user_id: batch_user,
                                                                          model.item_id: batch_item,
                                                                          model.y: batch_rating})
+                average_loss.append(loss)
+                '''
                 if i % 1000 == 0:
                     print("cost = %.9f" %(loss))
-            if epoch % 10 == 0:
+                '''
+            
+            if epoch % 5 == 0:
                 error = 0
                 test_set = list(test_data.keys())
                 for (u, i) in test_set:
                     pred_rating_test = sess.run(model.pred_rating, feed_dict = {model.user_id: [u],
                                                                                   model.item_id: [i]})
                     
-                    error += (float(test_data.get((u, i))) - pred_rating_test) ** 2
+                    error += (float(test_data.get((u, i))) - pred_rating_test[0]) ** 2
                 print("error = %.9f number = %04d RMSE = %.9f" %(error, len(test_set), np.sqrt(error / len(test_set))))
+                cost.append(np.mean(average_loss))
+                rmse.append(np.sqrt(error / len(test_set)))
+        dict = {'cost':cost, 'rmse':rmse}
+        df = pd.DataFrame(dict)
+        df.to_csv(args.savepath, header = 0)

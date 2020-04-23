@@ -55,20 +55,21 @@ class FinalModel():
         self.B2 = tf.Variable(tf.zeros([num_factor]))
         self.W3 = tf.Variable(tf.random_normal([num_factor, num_factor], stddev = 0.01), name = 'W3')
         self.B3 = tf.Variable(tf.zeros([num_factor]))
+        self.Dense = tf.Variable(tf.random_normal([num_factor, num_factor], stddev = 0.01), name = 'Dense')
+        self.B4 = tf.Variable(tf.zeros([num_factor]))
 
         #self.Dense = tf.Variable(tf.random_normal([int(num_factor / 4), 1], stddev = 0.01), name = 'Dense')
 
         hidden1 = tf.nn.relu(tf.matmul(mlp_vector, self.W1) + self.B1)
         hidden2 = tf.nn.relu(tf.matmul(hidden1, self.W2) + self.B2)
         hidden3 = tf.nn.relu(tf.matmul(hidden2, self.W3) + self.B3)
-        print(hidden3)
-        print(dst_user_latent_factor)
+        output = tf.nn.softmax(tf.matmul(hidden3, self.Dense) + self.B4)
         #output = tf.nn.softmax(tf.matmul(hidden3, self.Dense))
         #print(output)
 
         
 
-        pred_dst_user_latent_factor = src_user_latent_factor + hidden3
+        pred_dst_user_latent_factor = src_user_latent_factor + output
         self.src_pred_rating = tf.reduce_sum(tf.multiply(src_user_latent_factor, src_item_latent_factor), 1)
         self.dst_pred_rating = tf.reduce_sum(tf.multiply(pred_dst_user_latent_factor, dst_item_latent_factor), 1)
 
@@ -79,7 +80,8 @@ class FinalModel():
                     self.reg_rate[1] * tf.nn.l2_loss(self.dst_U) + \
                     self.reg_rate[2] * tf.nn.l2_loss(self.src_V) + \
                     self.reg_rate[3] * tf.nn.l2_loss(self.dst_V) + \
-                    self.reg_rate[4] * self.loss_Src_Dst_U #+ \
+                    self.reg_rate[4] * self.loss_Src_Dst_U + \
+                    self.reg_rate[0] * (tf.nn.l2_loss(self.W1) + tf.nn.l2_loss(self.W2) + tf.nn.l2_loss(self.W3)) + tf.nn.l2_loss(self.Dense)
                     #self.reg_rate[0] * tf.nn.l2_loss(hidden2)
         print("FinalModel build_network")
 
@@ -142,6 +144,8 @@ if __name__ == '__main__':
                 if i % 1000 == 0:
                     print("Cost = %.9f" %loss)
             if epoch % 10 == 0:
+                all_error = 0
+                all_test = 0
                 src_error = 0
                 src_set = list(src_test_matrix.keys())
                 for (u, i) in src_set:
@@ -149,6 +153,8 @@ if __name__ == '__main__':
                                                                                     model.src_itemid: [i]})
                     src_error += (float(src_test_matrix.get((u, i))) - src_pred_rating_test) ** 2
                 print("src_error = %.9f number = %04d RMSE = %.9f" %(src_error, len(src_set), np.sqrt(src_error / len(src_set))))
+                all_error += src_error
+                all_test += len(src_set)
 
                 dst_error = 0
                 dst_set = list(dst_test_matrix.keys())
@@ -156,5 +162,8 @@ if __name__ == '__main__':
                     dst_pred_rating_test = sess.run(model.dst_pred_rating, feed_dict = {model.shareuser: [u],
                                                                                     model.dst_itemid: [i]})
                     dst_error += (float(dst_test_matrix.get((u, i))) - dst_pred_rating_test) ** 2
-                print("src_error = %.9f number = %04d RMSE = %.9f" %(dst_error, len(dst_set), np.sqrt(dst_error / len(dst_set))))
+                print("dst_error = %.9f number = %04d RMSE = %.9f" %(dst_error, len(dst_set), np.sqrt(dst_error / len(dst_set))))
+                all_error += dst_error
+                all_test += len(dst_set)
+                print("all_error = %.9f number = %04d RMSE = %.9f" %(all_error, all_test, np.sqrt(all_error / all_test)))
         

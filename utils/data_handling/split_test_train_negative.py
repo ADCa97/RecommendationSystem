@@ -61,7 +61,10 @@ def split_test_train_negative(filename):
             all_train_userid += list(train_userid)
             all_train_itemid += list(train_itemid)
             all_train_rating += list(train_rating)
-
+            # 此处采样negative数据有问题，即生成的n_negative个数据中可能有重复的
+            # 原因在于k = np.random.randint(n_items)可能生成重复的k
+            # 修改方案为if k not in (itemid + row_negative)
+            '''
             # 为每一个(test_userid, test_itemid, test_rating)生成n_negative个数据
             #print(list(zip(test_userid, test_itemid, test_rating)))
             for test in zip(test_userid, test_itemid, test_rating):
@@ -75,6 +78,7 @@ def split_test_train_negative(filename):
                         row_negative.append(k)
                         j += 1
                 negative_writer.writerow(row_negative)
+            '''
     dict = {'userid': all_test_userid, 'itemid': all_test_itemid, 'rating': all_test_rating}
     pd.DataFrame.from_dict(dict).to_csv(filename + '_test.csv', index = False, header = False)
 

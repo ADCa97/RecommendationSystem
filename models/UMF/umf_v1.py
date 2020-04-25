@@ -11,6 +11,7 @@ def parse_args():
     parser.add_argument('--src', type = str, default = '../../data/dataset_1/Office_Products')
     parser.add_argument('--dst', type = str, default = '../../data/dataset_1/Movies_and_TV')
     parser.add_argument('--share', type = str, default = '../../data/dataset_1/share_info.csv')
+    parser.add_argument('--savepath', type = str, default = './default.csv')
     parser.add_argument('--learning_rate', type = float, default = 0.01)
     parser.add_argument('--reg_rate', nargs = '?', default = '[0.001, 0.001, 0]')
     parser.add_argument('--epochs', type = int, default = 50)
@@ -89,6 +90,11 @@ if __name__ == '__main__':
         init = tf.global_variables_initializer()
         sess.run(init)
 
+        cost = []
+        src_rmse = []
+        dst_rmse = []
+        all_rmse = []
+
         for epoch in range(model.epochs):
             print("Epoch: %04d" %epoch)
 
@@ -103,6 +109,7 @@ if __name__ == '__main__':
             src_ratings_random = list(src_ratings[idxs])
             dst_itemid_random = list(dst_itemid[idxs])
             dst_ratings_random = list(dst_ratings[idxs])
+            avarage_cost = []
             for i in range(total_batch):
                 batch_shareuser = shareuser_random[i * model.batch_size : (i + 1) * model.batch_size]
                 batch_src_itemid = src_itemid_random[i * model.batch_size : (i + 1) * model.batch_size]
@@ -115,9 +122,12 @@ if __name__ == '__main__':
                                                                          model.src_ratings: batch_src_ratings,
                                                                          model.dst_itemid: batch_dst_itemid,
                                                                          model.dst_ratings: batch_dst_ratings})
+                avarage_cost.append(loss)
+                '''
                 if i % 1000 == 0:
                     print("Cost = %.9f" %loss)
-            if epoch % 10 == 0:
+                '''
+            if epoch % 5 == 0:
                 all_error = 0
                 all_test = 0
                 src_error = 0
@@ -125,7 +135,7 @@ if __name__ == '__main__':
                 for (u, i) in src_set:
                     src_pred_rating_test = sess.run(model.src_pred_rating, feed_dict = {model.shareuser: [u],
                                                                                     model.src_itemid: [i]})
-                    src_error += (float(src_test_matrix.get((u, i))) - src_pred_rating_test) ** 2
+                    src_error += (float(src_test_matrix.get((u, i))) - src_pred_rating_test[0]) ** 2
                 print("src_error = %.9f number = %04d RMSE = %.9f" %(src_error, len(src_set), np.sqrt(src_error / len(src_set))))
                 all_error += src_error
                 all_test += len(src_set)
@@ -135,8 +145,16 @@ if __name__ == '__main__':
                 for (u, i) in dst_set:
                     dst_pred_rating_test = sess.run(model.dst_pred_rating, feed_dict = {model.shareuser: [u],
                                                                                     model.dst_itemid: [i]})
-                    dst_error += (float(dst_test_matrix.get((u, i))) - dst_pred_rating_test) ** 2
+                    dst_error += (float(dst_test_matrix.get((u, i))) - dst_pred_rating_test[0]) ** 2
                 print("dst_error = %.9f number = %04d RMSE = %.9f" %(dst_error, len(dst_set), np.sqrt(dst_error / len(dst_set))))
                 all_error += dst_error
                 all_test += len(dst_set)
                 print("all_error = %.9f number = %04d RMSE = %.9f" %(dst_error, all_test, np.sqrt(all_error / all_test)))
+                cost.append(np.mean(avarage_cost))
+                src_rmse.append(np.sqrt(src_error / len(src_set)))
+                dst_rmse.append(np.sqrt(dst_error / len(dst_set)))
+                all_rmse.append(np.sqrt(all_error / all_test))
+        dict = {'cost':cost, 'src_rmse':src_rmse, 'dst_rmse':dst_rmse, 'all_rmse':all_rmse}
+        df = pd.DataFrame(dict)
+        df.to_csv(args.savepath, header = 0)
+

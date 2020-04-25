@@ -6,7 +6,6 @@ reg_v = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
 
 i = 0
 savedir = './saver/Video_Games/'
-#os.system('mkdir ' + savedir)
 
 for u in lr:
     for v in reg:

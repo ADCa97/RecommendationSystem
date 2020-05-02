@@ -1,6 +1,6 @@
 import numpy as np 
 import tensorflow as tf 
-
+import os
 import load_variable as lv 
 from tensorflow.contrib import layers
 
@@ -60,9 +60,9 @@ def linear_mapping(input_Us, input_Ut, beta, learning_rate, training_epochs, dis
 if __name__ == '__main__':
     Us, Vs = lv.load_variable('../model/mf_s/s.meta', '../model/mf_s')
     Ut, Vt = lv.load_variable('../model/mf_t/t.meta', '../model/mf_t')
-    beta = 0.001
-    learning_rate = 0.01
-    training_epochs = 1000
+    beta = 0.0001
+    learning_rate = 0.1
+    training_epochs = 100000
     display_step = 10
     linear_mapping(Us, Ut, beta, learning_rate, training_epochs, display_step)
     print(tf.global_variables())

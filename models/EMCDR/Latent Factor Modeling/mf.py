@@ -15,6 +15,7 @@ def parse_args():
     parser.add_argument('--epochs', type = int, default = 50)
     parser.add_argument('--batch_size', type = int, default = 128)
     parser.add_argument('--num_factor', type = int, default = 50)
+    parser.add_argument('--savepath', type = str, default = '../model/mf_s/s')
     
     return parser.parse_args()
 
@@ -107,5 +108,5 @@ if __name__ == '__main__':
                 print("error = %.9f number = %04d RMSE = %.9f" %(error, len(test_set), np.sqrt(error / len(test_set))))
         # 保存模型
         saver = tf.train.Saver()
-        saver.save(sess, "../model/mf_t/t")
+        saver.save(sess, args.savepath)
         print("Optimization Finished!")

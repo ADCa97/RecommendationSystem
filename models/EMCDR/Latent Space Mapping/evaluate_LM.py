@@ -40,7 +40,7 @@ def load_data(path = "../../data/dataset_1/Office_Products", header = ['userid',
     return test_matrix.todok(), n_users, n_items
 
 if __name__ == '__main__':
-    load_data('/home/zhanchao/RecommendationSystem/data/dataset_4/Automotive')
+    #load_data('/home/zhanchao/RecommendationSystem/data/dataset_4/Automotive')
     Us, Vs = lv.load_variable('../model/mf_s/s.meta', '../model/mf_s')
     Ut, Vt = lv.load_variable('../model/mf_t/t.meta', '../model/mf_t')
     M, b = load_variable('../model/lm/lm.meta', '../model/lm')

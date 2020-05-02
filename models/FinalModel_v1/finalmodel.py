@@ -11,8 +11,9 @@ def parse_args():
     parser.add_argument('--src', type = str, default = '../../data/dataset_1/Office_Products')
     parser.add_argument('--dst', type = str, default = '../../data/dataset_1/Movies_and_TV')
     parser.add_argument('--share', type = str, default = '../../data/dataset_1/share_info.csv')
+    parser.add_argument('--savepath', type = str, default = 'default.csv')
     parser.add_argument('--learning_rate', type = float, default = 0.001)
-    parser.add_argument('--reg_rate', nargs = '?', default = '[0.001, 0.001, 0.001, 0.001, 0.001]')
+    parser.add_argument('--reg_rate', nargs = '?', default = '[0.001, 0.001, 0.001, 0.001, 0.001, 0.001]')
     parser.add_argument('--epochs', type = int, default = 50)
     parser.add_argument('--batch_size', type = int, default = 128)
     return parser.parse_args()
@@ -46,6 +47,29 @@ class FinalModel():
         src_item_latent_factor = tf.nn.embedding_lookup(self.src_V, self.src_itemid)
         dst_item_latent_factor = tf.nn.embedding_lookup(self.dst_V, self.dst_itemid)
 
+        src_mlp_vector = tf.concat([src_user_latent_factor, src_item_latent_factor], 1)
+        self.src_W1 = tf.Variable(tf.random_normal([2 * num_factor, num_factor], stddev = 0.01), name = 'src_W1')
+        self.src_B1 = tf.Variable(tf.zeros([num_factor]))
+        self.src_Dense = tf.Variable(tf.random_normal([num_factor, num_factor], stddev = 0.01), name = 'src_Dense')
+        self.src_B2 = tf.Variable(tf.zeros([num_factor]))
+
+        src_hidden1 = tf.nn.relu(tf.matmul(src_mlp_vector, self.src_W1) + self.src_B1)
+        src_output = tf.nn.softmax(tf.matmul(src_hidden1, self.src_Dense) + self.src_B2)
+
+        pred_src_item_latent_factor = src_user_latent_factor + src_output
+
+
+        dst_mlp_vector = tf.concat([dst_user_latent_factor, dst_item_latent_factor], 1)
+        self.dst_W1 = tf.Variable(tf.random_normal([2 * num_factor, num_factor], stddev = 0.01), name = 'dst_W1')
+        self.dst_B1 = tf.Variable(tf.zeros([num_factor]))
+        self.dst_Dense = tf.Variable(tf.random_normal([num_factor, num_factor], stddev = 0.01), name = 'dst_Dense')
+        self.dst_B2 = tf.Variable(tf.zeros([num_factor]))
+
+        dst_hidden1 = tf.nn.relu(tf.matmul(dst_mlp_vector, self.dst_W1) + self.dst_B1)
+        dst_output = tf.nn.softmax(tf.matmul(dst_hidden1, self.dst_Dense) + self.dst_B2)
+
+        pred_dst_item_latent_factor = dst_user_latent_factor + dst_output
+
 
         # 方案一
         mlp_vector = tf.concat([src_user_latent_factor, dst_user_latent_factor], 1)
@@ -68,21 +92,26 @@ class FinalModel():
         #print(output)
 
         
-        pred_src_user_latent_factor = dst_user_latent_factor + output
-        pred_dst_user_latent_factor = src_user_latent_factor + output
-        self.src_pred_rating = tf.reduce_sum(tf.multiply(pred_src_user_latent_factor, src_item_latent_factor), 1)
-        self.dst_pred_rating = tf.reduce_sum(tf.multiply(pred_dst_user_latent_factor, dst_item_latent_factor), 1)
 
-        self.loss_Src_Dst_U = tf.nn.l2_loss(pred_dst_user_latent_factor - dst_user_latent_factor) + tf.nn.l2_loss(pred_src_user_latent_factor - src_user_latent_factor)
+        pred_dst_user_latent_factor = src_user_latent_factor + output
+
+
+        self.src_pred_rating = tf.reduce_sum(tf.multiply(src_user_latent_factor, pred_src_item_latent_factor), 1)
+        self.dst_pred_rating = tf.reduce_sum(tf.multiply(pred_dst_user_latent_factor, pred_dst_item_latent_factor), 1)
+
+        self.loss_Src_Dst_U = tf.nn.l2_loss(pred_dst_user_latent_factor - dst_user_latent_factor)
+        self.loss_Src_U_V = tf.nn.l2_loss(pred_src_item_latent_factor - src_item_latent_factor)
+        self.loss_Dst_U_V = tf.nn.l2_loss(pred_dst_item_latent_factor - dst_item_latent_factor)
         self.loss = tf.reduce_sum(tf.square(self.src_ratings - self.src_pred_rating)) + \
                     tf.reduce_sum(tf.square(self.dst_ratings - self.dst_pred_rating)) + \
                     self.reg_rate[0] * tf.nn.l2_loss(self.src_U) + \
                     self.reg_rate[1] * tf.nn.l2_loss(self.dst_U) + \
                     self.reg_rate[2] * tf.nn.l2_loss(self.src_V) + \
                     self.reg_rate[3] * tf.nn.l2_loss(self.dst_V) + \
-                    self.reg_rate[4] * self.loss_Src_Dst_U + \
-                    self.reg_rate[0] * (tf.nn.l2_loss(self.W1) + tf.nn.l2_loss(self.W2) + tf.nn.l2_loss(self.W3) + tf.nn.l2_loss(self.Dense)) + \
-                    self.reg_rate[1] * (tf.nn.l2_loss(self.B1) + tf.nn.l2_loss(self.B2) + tf.nn.l2_loss(self.B3) + tf.nn.l2_loss(self.B4))
+                    self.reg_rate[4] * (self.loss_Src_Dst_U + self.loss_Src_U_V + self.loss_Dst_U_V) + \
+                    self.reg_rate[5] * (tf.nn.l2_loss(self.W1) + tf.nn.l2_loss(self.W2) + tf.nn.l2_loss(self.W3)) + tf.nn.l2_loss(self.Dense) +\
+                    self.reg_rate[5] * (tf.nn.l2_loss(self.src_W1) + tf.nn.l2_loss(self.src_Dense) + tf.nn.l2_loss(self.src_B1) + tf.nn.l2_loss(self.src_B2) + tf.nn.l2_loss(self.dst_B1) + tf.nn.l2_loss(self.dst_B2))
+
                     #self.reg_rate[0] * tf.nn.l2_loss(hidden2)
         print("FinalModel build_network")
 
@@ -115,7 +144,10 @@ if __name__ == '__main__':
         init = tf.global_variables_initializer()
         sess.run(init)
         
-        
+        cost = []
+        src_rmse = []
+        dst_rmse = []
+        all_rmse = []
         for epoch in range(model.epochs):
             print("Epoch: %04d" %epoch)
 
@@ -130,6 +162,7 @@ if __name__ == '__main__':
             src_ratings_random = list(src_ratings[idxs])
             dst_itemid_random = list(dst_itemid[idxs])
             dst_ratings_random = list(dst_ratings[idxs])
+            average_cost = []
             for i in range(total_batch):
                 batch_shareuser = shareuser_random[i * model.batch_size : (i + 1) * model.batch_size]
                 batch_src_itemid = src_itemid_random[i * model.batch_size : (i + 1) * model.batch_size]
@@ -142,9 +175,12 @@ if __name__ == '__main__':
                                                                          model.src_ratings: batch_src_ratings,
                                                                          model.dst_itemid: batch_dst_itemid,
                                                                          model.dst_ratings: batch_dst_ratings})
+                average_cost.append(loss)
+                '''
                 if i % 1000 == 0:
                     print("Cost = %.9f" %loss)
-            if epoch % 10 == 0:
+                '''
+            if epoch % 5 == 0:
                 all_error = 0
                 all_test = 0
                 src_error = 0
@@ -152,7 +188,7 @@ if __name__ == '__main__':
                 for (u, i) in src_set:
                     src_pred_rating_test = sess.run(model.src_pred_rating, feed_dict = {model.shareuser: [u],
                                                                                     model.src_itemid: [i]})
-                    src_error += (float(src_test_matrix.get((u, i))) - src_pred_rating_test) ** 2
+                    src_error += (float(src_test_matrix.get((u, i))) - src_pred_rating_test[0]) ** 2
                 print("src_error = %.9f number = %04d RMSE = %.9f" %(src_error, len(src_set), np.sqrt(src_error / len(src_set))))
                 all_error += src_error
                 all_test += len(src_set)
@@ -162,9 +198,15 @@ if __name__ == '__main__':
                 for (u, i) in dst_set:
                     dst_pred_rating_test = sess.run(model.dst_pred_rating, feed_dict = {model.shareuser: [u],
                                                                                     model.dst_itemid: [i]})
-                    dst_error += (float(dst_test_matrix.get((u, i))) - dst_pred_rating_test) ** 2
+                    dst_error += (float(dst_test_matrix.get((u, i))) - dst_pred_rating_test[0]) ** 2
                 print("dst_error = %.9f number = %04d RMSE = %.9f" %(dst_error, len(dst_set), np.sqrt(dst_error / len(dst_set))))
                 all_error += dst_error
                 all_test += len(dst_set)
                 print("all_error = %.9f number = %04d RMSE = %.9f" %(all_error, all_test, np.sqrt(all_error / all_test)))
-        
+                cost.append(np.mean(average_cost))
+                src_rmse.append(np.sqrt(src_error / len(src_set)))
+                dst_rmse.append(np.sqrt(dst_error / len(dst_set)))
+                all_rmse.append(np.sqrt(all_error / all_test))
+        dict = {'cost':cost, 'src_rmse':src_rmse, 'dst_rmse':dst_rmse, 'all_rmse':all_rmse}
+        df = pd.DataFrame(dict)
+        df.to_csv(args.savepath, header = 0)
